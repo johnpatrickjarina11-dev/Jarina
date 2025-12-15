@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- This tag makes it work perfectly on mobile screens -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cat BMI App</title>
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Using Tailwind for easy styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- FONTS & COLORS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --primary: #FFB6C1; /* Light Pink */
+            --accent: #FF69B4;  /* Hot Pink */
+            --purple-btn: #DDA0DD;
+            --bg-gray: #FAFAFA;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a1a; /* Dark bg for PC */
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- PHONE FRAME (Only visible on PC) --- */
+        .app-container {
+            width: 375px;
+            height: 812px; /* iPhone X height */
+            background-color: var(--bg-gray);
+            position: relative;
+            overflow: hidden;
+            border-radius: 40px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border: 8px solid #000;
+        }
+
+        /* --- MOBILE MODE (When opened on phone) --- */
+        @media (max-width: 480px) {
+            body {
+                background-color: var(--bg-gray);
+                align-items: flex-start;
+                height: 100%;
+            }
+            .app-container {
+                width: 100%;
+                height: 100vh; /* Fill screen */
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto;
+            background: var(--bg-gray);
+            padding: 20px;
+            animation: fadeEffect 0.3s;
+        }
+        .screen.active { display: flex; }
+
+        @keyframes fadeEffect {
+            from {opacity: 0; transform: translateY(10px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        /* --- CUSTOM UI ELEMENTS --- */
+        .input-field {
+            background: #FFE4E1;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            width: 100%;
+            margin-bottom: 15px;
+            color: #333;
+            outline: none;
+        }
+        .input-field::placeholder { color: #d68a98; }
+
+        .btn-pink {
+            background: #FFB6C1;
+            color: white;
+            padding: 15px;
+            border-radius: 30px;
+            width: 100%;
+            font-weight: 600;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 182, 193, 0.4);
+            margin-top: auto; /* Push to bottom */
+            margin-bottom: 20px;
+        }
+        .btn-pink:active { transform: scale(0.98); }
+
+        .btn-purple {
+            background: linear-gradient(135deg, #E0B0FF, #DA70D6);
+            color: white;
+            padding: 15px;
+            border-radius: 30px;
+            width: 100%;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(218, 112, 214, 0.4);
+        }
+
+        /* Dashboard Items */
+        .dash-card {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .cat-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 10px;
+        }
+
+        /* Calculator Specifics */
+        .gender-select {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .gender-card {
+            background: white;
+            flex: 1;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid transparent;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .gender-card.active {
+            border-color: #FF69B4;
+            color: #FF69B4;
+            background: #FFF0F5;
+        }
+
+        .counter-btn {
+            background: #FFB6C1;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* Gauge */
+        .gauge {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 15px solid #eee;
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .gauge-inner {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- STATUS BAR (Fake) -->
+        <div class="flex justify-between px-5 py-3 text-xs font-bold text-gray-500">
+            <span>02:01</span>
+            <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+        </div>
+
+        <!-- 1. WELCOME SCREEN -->
+        <div id="screen-welcome" class="screen active text-center">
+            <div class="mt-20">
+                <div class="w-24 h-24 bg-blue-400 rounded-3xl mx-auto flex items-center justify-center text-white text-4xl mb-4 shadow-lg">
+                    <i class="fas fa-weight"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">BMI CHECKER</h1>
+            </div>
+            <button class="btn-pink" onclick="goTo('screen-signup')">Get Started</button>
+        </div>
+
+        <!-- 2. SIGN UP -->
+        <div id="screen-signup" class="screen">
+            <h2 class="text-xl font-bold mt-10 mb-2">Welcome on board!</h2>
+            <p class="text-xs text-gray-400 mb-8">Let's work together to achieve your goal</p>
+            
+            <input type="text" class="input-field" placeholder="Enter your full name">
+            <input type="email" class="input-field" placeholder="Enter your email">
+            <input type="password" class="input-field" placeholder="Enter password">
+            <input type="password" class="input-field" placeholder="Confirm password">
+
+            <button class="btn-pink" onclick="goTo('screen-otp')">Sign up</button>
+            <p class="text-xs text-center text-blue-400 mt-2 cursor-pointer" onclick="goTo('screen-login')">Already have an account? Sign In</p>
+        </div>
+
+        <!-- 3. OTP SCREEN (Added based on screenshot) -->
+        <div id="screen-otp" class="screen text-center">
+            <i class="fas fa-arrow-left absolute top-5 left-5 text-xl cursor-pointer" onclick="goTo('screen-signup')"></i>
+            <h2 class="text-xl font-bold mt-12 mb-2">Let's get you back in</h2>
+            
+            <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=200" class="w-32 h-32 mx-auto rounded-full object-cover my-6">
+            
+            <div class="flex justify-center gap-2 mb-8">
+                <input type="text" class="w-10 h-10 bg-pink-100 rounded text-center" value="1">
+                <input type="text" class="w-10 h-10 bg-pink-100 rounded text-center" value="2">
+                <input type="text" class="w-10 h-10 bg-pink-100 rounded text-center" value="3">
+                <input type="text" class="w-10 h-10 bg-pink-100 rounded text-center" value="4">
+            </div>
+
+            <button class="btn-pink" onclick="goTo('screen-profile')">Verify OTP</button>
+        </div>
+
+        <!-- 4. PROFILE SETUP -->
+        <div id="screen-profile" class="screen">
+            <i class="fas fa-arrow-left text-xl mb-4 cursor-pointer" onclick="goTo('screen-otp')"></i>
+            <h2 class="text-center text-xl font-bold mb-6">Profile</h2>
+            
+            <div class="text-center mb-6">
+                <img src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=200" class="w-32 h-32 rounded-full mx-auto border-4 border-white shadow-md object-cover">
+            </div>
+
+            <div class="mb-2">
+                <label class="text-xs font-bold ml-2">Username:</label>
+                <div class="bg-pink-200 p-3 rounded-xl text-sm font-bold">John Patrick Jarina</div>
+            </div>
+            <div class="mb-2">
+                <label class="text-xs font-bold ml-2">Email:</label>
+                <div class="bg-pink-200 p-3 rounded-xl text-sm font-bold">johnpatrickjarina@gmail.com</div>
+            </div>
+
+            <button class="btn-pink" onclick="goTo('screen-dashboard')">Save & Continue</button>
+        </div>
+
+        <!-- 5. DASHBOARD -->
+        <div id="screen-dashboard" class="screen">
+            <div class="mt-4 mb-6">
+                <p class="text-xs text-gray-400 font-bold">GOOD MORNING</p>
+                <h2 class="text-xl font-bold">John Patrick Jarina</h2>
+            </div>
+
+            <div class="bg-pink-100 rounded-3xl p-6 flex justify-between items-center mb-6 shadow-sm cursor-pointer" onclick="goTo('screen-calculator')">
+                <div>
+                    <h3 class="font-bold text-lg">Calculate your BMI</h3>
+                    <div class="bg-white rounded-full p-2 w-10 h-10 flex items-center justify-center mt-2">
+                         <i class="fas fa-arrow-right text-pink-400"></i>
+                    </div>
+                </div>
+                <img src="https://cdn-icons-png.flaticon.com/512/3063/3063823.png" class="w-16">
+            </div>
+
+            <div class="dash-card">
+                <img src="https://images.unsplash.com/photo-1513245543132-31f507417b26?w=200" class="cat-avatar">
+                <p class="text-sm text-gray-500 mt-2">Keep Healthy!</p>
+            </div>
+            
+            <!-- Bottom Nav -->
+            <div class="mt-auto bg-pink-200 rounded-full p-4 flex justify-around text-pink-500 text-xl">
+                <i class="fas fa-th-large"></i>
+                <i class="fas fa-chart-bar" onclick="goTo('screen-result')"></i> <!-- Shortcut to result -->
+                <i class="fas fa-cog" onclick="goTo('screen-more')"></i>
+            </div>
+        </div>
+
+        <!-- 6. CALCULATOR -->
+        <div id="screen-calculator" class="screen">
+            <i class="fas fa-arrow-left text-xl mb-4 cursor-pointer" onclick="goTo('screen-dashboard')"></i>
+            <h2 class="text-center font-bold text-lg mb-6">BMI CALCULATOR</h2>
+
+            <!-- Gender -->
+            <div class="gender-select mb-6">
+                <div class="gender-card active" id="btn-male" onclick="setGender('male')">
+                    <i class="fas fa-mars text-2xl mb-2"></i>
+                    <div class="text-sm font-bold">Male</div>
+                </div>
+                <div class="gender-card" id="btn-female" onclick="setGender('female')">
+                    <i class="fas fa-venus text-2xl mb-2"></i>
+                    <div class="text-sm font-bold">Female</div>
+                </div>
+            </div>
+
+            <!-- Height -->
+            <div class="bg-white p-4 rounded-xl text-center mb-6 shadow-sm">
+                <p class="text-xs text-gray-400 font-bold mb-1">HEIGHT</p>
+                <div class="text-3xl font-bold text-purple-600 mb-2"><span id="height-disp">145</span><span class="text-sm text-gray-400">cm</span></div>
+                <input type="range" min="100" max="220" value="145" class="w-full accent-purple-500" oninput="updateHeight(this.value)">
+            </div>
+
+            <!-- Weight & Age -->
+            <div class="flex gap-4 mb-8">
+                <div class="bg-white p-4 rounded-xl flex-1 text-center shadow-sm">
+                    <p class="text-xs text-gray-400 font-bold">WEIGHT</p>
+                    <div class="text-2xl font-bold my-2" id="weight-disp">70</div>
+                    <div class="flex justify-center gap-3">
+                        <button class="counter-btn" onclick="updateWeight(-1)">-</button>
+                        <button class="counter-btn" onclick="updateWeight(1)">+</button>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl flex-1 text-center shadow-sm">
+                    <p class="text-xs text-gray-400 font-bold">AGE</p>
+                    <div class="text-2xl font-bold my-2" id="age-disp">25</div>
+                    <div class="flex justify-center gap-3">
+                        <button class="counter-btn" onclick="updateAge(-1)">-</button>
+                        <button class="counter-btn" onclick="updateAge(1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-purple" onclick="calculateBMI()">Calculate BMI</button>
+        </div>
+
+        <!-- 7. RESULTS -->
+        <div id="screen-result" class="screen text-center">
+            <div class="flex justify-between items-center mb-6">
+                <i class="fas fa-arrow-left text-xl cursor-pointer" onclick="goTo('screen-calculator')"></i>
+                <h2 class="font-bold text-lg">BMI RESULTS</h2>
+                <div class="w-5"></div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-6 shadow-sm mb-6">
+                <div class="gauge" id="res-gauge">
+                    <div class="gauge-inner">
+                        <div class="text-4xl font-bold text-gray-800" id="res-score">33.3</div>
+                    </div>
+                </div>
+                <p>You have <span class="font-bold text-pink-500" id="res-text">Obese</span> body weight!</p>
+            </div>
+
+            <button class="btn-pink" onclick="goTo('screen-details')">Details</button>
+        </div>
+
+        <!-- 8. DETAILS (Based on SUMMARY screen) -->
+        <div id="screen-details" class="screen">
+            <h2 class="text-center font-bold mb-6 mt-4">SUMMARY</h2>
+            
+            <div class="bg-white rounded-2xl p-4 shadow-sm mb-6 flex justify-between items-center">
+                <span class="text-gray-500">Your BMI</span>
+                <span class="text-2xl font-bold text-gray-800" id="sum-score">33.3</span>
+                <span class="bg-pink-100 text-pink-500 px-3 py-1 rounded-full text-xs font-bold" id="sum-text">Obese</span>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm space-y-4 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Less than 18.5</span>
+                    <span class="font-bold text-blue-400">Underweight</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">18.5 to 24.9</span>
+                    <span class="font-bold text-green-400">Healthy</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">25 to 29.9</span>
+                    <span class="font-bold text-yellow-400">Overweight</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">30 or above</span>
+                    <span class="font-bold text-red-400">Obese</span>
+                </div>
+            </div>
+
+            <button class="btn-pink" style="margin-top: 40px;" onclick="goTo('screen-more')">Save Results</button>
+        </div>
+
+        <!-- 9. MORE ABOUT US -->
+        <div id="screen-more" class="screen text-center">
+            <div class="mt-10">
+                <img src="https://images.unsplash.com/photo-1519052537078-e6302a4968ef?w=200" class="w-40 h-40 mx-auto rounded-xl object-cover shadow-lg mb-6">
+                
+                <div class="space-y-4 px-4">
+                    <div class="bg-pink-100 p-4 rounded-xl flex justify-between items-center cursor-pointer">
+                        <span class="font-bold">About Us</span>
+                        <i class="fas fa-arrow-circle-right text-xl"></i>
+                    </div>
+                    <div class="bg-purple-200 p-4 rounded-xl flex justify-between items-center cursor-pointer">
+                        <span class="font-bold">Rate Us</span>
+                        <i class="fas fa-arrow-circle-right text-xl"></i>
+                    </div>
+                    <div class="bg-pink-100 p-4 rounded-xl flex justify-between items-center cursor-pointer text-red-400" onclick="goTo('screen-welcome')">
+                        <span class="font-bold">Sign Out</span>
+                        <i class="fas fa-arrow-circle-right text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA ---
+        let height = 145;
+        let weight = 70;
+        let age = 25;
+        let gender = 'male';
+
+        // --- NAVIGATION ---
+        function goTo(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // --- CALCULATOR LOGIC ---
+        function setGender(g) {
+            gender = g;
+            document.getElementById('btn-male').classList.remove('active');
+            document.getElementById('btn-female').classList.remove('active');
+            document.getElementById('btn-' + g).classList.add('active');
+        }
+
+        function updateHeight(val) {
+            height = val;
+            document.getElementById('height-disp').innerText = height;
+        }
+
+        function updateWeight(n) {
+            weight += n;
+            if (weight < 1) weight = 1;
+            document.getElementById('weight-disp').innerText = weight;
+        }
+
+        function updateAge(n) {
+            age += n;
+            if (age < 1) age = 1;
+            document.getElementById('age-disp').innerText = age;
+        }
+
+        function calculateBMI() {
+            let hM = height / 100;
+            let bmi = (weight / (hM * hM)).toFixed(1);
+            
+            let text = "";
+            let color = "";
+
+            if (bmi < 18.5) {
+                text = "Underweight";
+                color = "#60A5FA"; // blue
+            } else if (bmi >= 18.5 && bmi <= 24.9) {
+                text = "Healthy";
+                color = "#4ADE80"; // green
+            } else if (bmi >= 25 && bmi <= 29.9) {
+                text = "Overweight";
+                color = "#FACC15"; // yellow
+            } else {
+                text = "Obese";
+                color = "#F87171"; // red
+            }
+
+            // Update Result Screen
+            document.getElementById('res-score').innerText = bmi;
+            document.getElementById('res-text').innerText = text;
+            document.getElementById('res-text').style.color = color;
+            document.getElementById('res-gauge').style.borderColor = color;
+
+            // Update Details Screen
+            document.getElementById('sum-score').innerText = bmi;
+            document.getElementById('sum-text').innerText = text;
+            document.getElementById('sum-text').style.color = color;
+            document.getElementById('sum-text').style.backgroundColor = color + "33"; // Add transparency
+
+            goTo('screen-result');
+        }
+    </script>
+</body>
+</html>
